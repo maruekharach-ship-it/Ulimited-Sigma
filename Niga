@@ -1,0 +1,468 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Safety Check
+if not LocalPlayer then return end
+
+-- ScreenGui Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UltimateHubGUI_Fixed"
+ScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Open UI Button
+local OpenUIBtn = Instance.new("TextButton", ScreenGui)
+OpenUIBtn.Name = "OpenUIBtn"
+OpenUIBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+OpenUIBtn.Position = UDim2.new(0, 10, 0.5, -20)
+OpenUIBtn.Size = UDim2.new(0, 80, 0, 35)
+OpenUIBtn.Font = Enum.Font.SourceSansBold
+OpenUIBtn.Text = "เปิด Menu"
+OpenUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+OpenUIBtn.TextSize = 14
+OpenUIBtn.Visible = false
+Instance.new("UICorner", OpenUIBtn).CornerRadius = UDim.new(0, 6)
+
+-- Main Frame
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.Position = UDim2.new(0.5, -150, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 300, 0, 360)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, -40, 0, 35)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.SourceSansBold
+Title.Text = "Control Hub (Stable)"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+
+-- UI Toggle
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenUIBtn.Visible = true
+end)
+OpenUIBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenUIBtn.Visible = false
+end)
+
+---------------------------------------------------------
+-- Tab Navigation
+---------------------------------------------------------
+local TabContainer = Instance.new("Frame", MainFrame)
+TabContainer.Size = UDim2.new(1, -20, 0, 30)
+TabContainer.Position = UDim2.new(0, 10, 0, 35)
+TabContainer.BackgroundTransparency = 1
+
+local TabListLayout = Instance.new("UIListLayout", TabContainer)
+TabListLayout.FillDirection = Enum.FillDirection.Horizontal
+TabListLayout.Padding = UDim.new(0, 5)
+
+local PageContainer = Instance.new("Frame", MainFrame)
+PageContainer.Size = UDim2.new(1, -20, 1, -75)
+PageContainer.Position = UDim2.new(0, 10, 0, 70)
+PageContainer.BackgroundTransparency = 1
+
+local pages = {}
+
+local function createTab(tabName)
+    local tabBtn = Instance.new("TextButton", TabContainer)
+    tabBtn.Size = UDim2.new(0.23, 0, 1, 0)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    tabBtn.Font = Enum.Font.SourceSansBold
+    tabBtn.Text = tabName
+    tabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    tabBtn.TextSize = 13
+    Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+
+    local page = Instance.new("ScrollingFrame", PageContainer)
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.ScrollBarThickness = 3
+    page.Visible = false
+    page.CanvasSize = UDim2.new(0, 0, 0, 360)
+
+    local layout = Instance.new("UIListLayout", page)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 6)
+
+    pages[tabName] = {Button = tabBtn, Page = page}
+
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(pages) do
+            t.Page.Visible = false
+            t.Button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            t.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+        end
+        page.Visible = true
+        tabBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+        tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    return page
+end
+
+local MainTab = createTab("หลัก")
+local MovementTab = createTab("เคลื่อนที่")
+local CombatTab = createTab("การต่อสู้")
+local ESPTab = createTab("ESP มอง")
+
+pages["หลัก"].Page.Visible = true
+pages["หลัก"].Button.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+pages["หลัก"].Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local function createButton(parent, text)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0.96, 0, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 14
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+local function createInput(parent, placeholder, defaultText)
+    local box = Instance.new("TextBox", parent)
+    box.Size = UDim2.new(0.96, 0, 0, 28)
+    box.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    box.Font = Enum.Font.SourceSans
+    box.PlaceholderText = placeholder
+    box.Text = defaultText
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    box.TextSize = 13
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+    return box
+end
+
+---------------------------------------------------------
+-- 1. หมวดหลัก: Time Stop
+---------------------------------------------------------
+local TimeStopBtn = createButton(MainTab, "หยุดเวลา : OFF")
+local isTimeStopped = false
+
+TimeStopBtn.MouseButton1Click:Connect(function()
+    isTimeStopped = not isTimeStopped
+    TimeStopBtn.Text = isTimeStopped and "หยุดเวลา : ON" or "หยุดเวลา : OFF"
+    TimeStopBtn.BackgroundColor3 = isTimeStopped and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    
+    pcall(function()
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Humanoid") and obj.Parent and obj.Parent ~= LocalPlayer.Character then
+                local root = obj.Parent:FindFirstChild("HumanoidRootPart")
+                if root then root.Anchored = isTimeStopped end
+            end
+        end
+    end)
+end)
+
+---------------------------------------------------------
+-- 2. หมวดเคลื่อนที่: TPWalk / Jump
+---------------------------------------------------------
+local TPWalkBtn = createButton(MovementTab, "TPWalk : OFF")
+local SpeedInput = createInput(MovementTab, "ความเร็ว TPWalk (เช่น 2.5)", "2.5")
+local InfJumpBtn = createButton(MovementTab, "กระโดดไม่จำกัด : OFF")
+local HighJumpBtn = createButton(MovementTab, "กระโดดสูง : OFF")
+local JumpPowerInput = createInput(MovementTab, "กำลังกระโดด (ปกติ 50)", "100")
+
+local tpWalkEnabled, tpWalkSpeed, tpWalkConn = false, 2.5, nil
+local infJumpEnabled, highJumpEnabled, jumpPowerVal = false, false, 100
+
+SpeedInput.FocusLost:Connect(function()
+    tpWalkSpeed = tonumber(SpeedInput.Text) or tpWalkSpeed
+    SpeedInput.Text = tostring(tpWalkSpeed)
+end)
+
+TPWalkBtn.MouseButton1Click:Connect(function()
+    tpWalkEnabled = not tpWalkEnabled
+    TPWalkBtn.Text = tpWalkEnabled and "TPWalk : ON" or "TPWalk : OFF"
+    TPWalkBtn.BackgroundColor3 = tpWalkEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    
+    if tpWalkEnabled then
+        tpWalkConn = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+                local hum = char.Humanoid
+                local hrp = char.HumanoidRootPart
+                if hum.MoveDirection.Magnitude > 0 then
+                    hrp.CFrame = hrp.CFrame + (hum.MoveDirection * tpWalkSpeed)
+                end
+            end
+        end)
+    elseif tpWalkConn then
+        tpWalkConn:Disconnect()
+        tpWalkConn = nil
+    end
+end)
+
+JumpPowerInput.FocusLost:Connect(function()
+    jumpPowerVal = tonumber(JumpPowerInput.Text) or jumpPowerVal
+    JumpPowerInput.Text = tostring(jumpPowerVal)
+    if highJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = jumpPowerVal
+    end
+end)
+
+InfJumpBtn.MouseButton1Click:Connect(function()
+    infJumpEnabled = not infJumpEnabled
+    InfJumpBtn.Text = infJumpEnabled and "กระโดดไม่จำกัด : ON" or "กระโดดไม่จำกัด : OFF"
+    InfJumpBtn.BackgroundColor3 = infJumpEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+HighJumpBtn.MouseButton1Click:Connect(function()
+    highJumpEnabled = not highJumpEnabled
+    HighJumpBtn.Text = highJumpEnabled and "กระโดดสูง : ON" or "กระโดดสูง : OFF"
+    HighJumpBtn.BackgroundColor3 = highJumpEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.UseJumpPower = true
+        char.Humanoid.JumpPower = highJumpEnabled and jumpPowerVal or 50
+    end
+end)
+
+---------------------------------------------------------
+-- 3. หมวดการต่อสู้: Aimbot, Safe Silent Aim & Wall Check
+---------------------------------------------------------
+local AimbotBtn = createButton(CombatTab, "Aimbot : OFF")
+local SilentAimBtn = createButton(CombatTab, "Silent Aim : OFF")
+local TargetNPCBtn = createButton(CombatTab, "ล็อก NPC : OFF")
+local WallCheckBtn = createButton(CombatTab, "Wall Check : OFF")
+local TargetPartBtn = createButton(CombatTab, "เป้าหมาย : Head")
+local AimModeBtn = createButton(CombatTab, "ตำแหน่ง : ตามนิ้ว/เมาส์")
+local RainbowFOVBtn = createButton(CombatTab, "FOV สีรุ้ง : OFF")
+local FOVInput = createInput(CombatTab, "ขนาดวง FOV (เช่น 150)", "150")
+
+TargetPartBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+AimModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+
+local aimbotEnabled, silentAimEnabled, targetNPCEnabled = false, false, false
+local wallCheckEnabled, aimCenterScreen, rainbowFOV = false, false, false
+local targetPart, fovRadius = "Head", 150
+
+-- FOV Circle Safe Check
+local FOVCircle = nil
+pcall(function()
+    if Drawing and Drawing.new then
+        FOVCircle = Drawing.new("Circle")
+        FOVCircle.Thickness = 2
+        FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+        FOVCircle.Filled = false
+        FOVCircle.Transparency = 1
+        FOVCircle.Visible = false
+        FOVCircle.Radius = fovRadius
+    end
+end)
+
+local function isPartVisible(part)
+    if not wallCheckEnabled then return true end
+    local char = LocalPlayer.Character
+    if not char then return false end
+    
+    local rayParam = RaycastParams.new()
+    rayParam.FilterType = Enum.RaycastFilterType.Exclude
+    rayParam.FilterDescendantsInstances = {char, Camera}
+    
+    local rayResult = workspace:Raycast(Camera.CFrame.Position, (part.Position - Camera.CFrame.Position), rayParam)
+    return rayResult and rayResult.Instance and rayResult.Instance:IsDescendantOf(part.Parent)
+end
+
+TargetPartBtn.MouseButton1Click:Connect(function()
+    targetPart = (targetPart == "Head") and "HumanoidRootPart" or "Head"
+    TargetPartBtn.Text = (targetPart == "Head") and "เป้าหมาย : Head (หัว)" or "เป้าหมาย : Torso/Root (ตัว)"
+end)
+
+AimModeBtn.MouseButton1Click:Connect(function()
+    aimCenterScreen = not aimCenterScreen
+    AimModeBtn.Text = aimCenterScreen and "ตำแหน่ง : กลางหน้าจอ" or "ตำแหน่ง : ตามนิ้ว/เมาส์"
+end)
+
+TargetNPCBtn.MouseButton1Click:Connect(function()
+    targetNPCEnabled = not targetNPCEnabled
+    TargetNPCBtn.Text = targetNPCEnabled and "ล็อก NPC : ON" or "ล็อก NPC : OFF"
+    TargetNPCBtn.BackgroundColor3 = targetNPCEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+end)
+
+WallCheckBtn.MouseButton1Click:Connect(function()
+    wallCheckEnabled = not wallCheckEnabled
+    WallCheckBtn.Text = wallCheckEnabled and "Wall Check : ON" or "Wall Check : OFF"
+    WallCheckBtn.BackgroundColor3 = wallCheckEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+end)
+
+RainbowFOVBtn.MouseButton1Click:Connect(function()
+    rainbowFOV = not rainbowFOV
+    RainbowFOVBtn.Text = rainbowFOV and "FOV สีรุ้ง : ON" or "FOV สีรุ้ง : OFF"
+    RainbowFOVBtn.BackgroundColor3 = rainbowFOV and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    if FOVCircle and not rainbowFOV then FOVCircle.Color = Color3.fromRGB(255, 255, 255) end
+end)
+
+FOVInput.FocusLost:Connect(function()
+    fovRadius = tonumber(FOVInput.Text) or fovRadius
+    FOVInput.Text = tostring(fovRadius)
+    if FOVCircle then FOVCircle.Radius = fovRadius end
+end)
+
+AimbotBtn.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    AimbotBtn.Text = aimbotEnabled and "Aimbot : ON" or "Aimbot : OFF"
+    AimbotBtn.BackgroundColor3 = aimbotEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    if FOVCircle then FOVCircle.Visible = aimbotEnabled or silentAimEnabled end
+end)
+
+SilentAimBtn.MouseButton1Click:Connect(function()
+    silentAimEnabled = not silentAimEnabled
+    SilentAimBtn.Text = silentAimEnabled and "Silent Aim : ON" or "Silent Aim : OFF"
+    SilentAimBtn.BackgroundColor3 = silentAimEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    if FOVCircle then FOVCircle.Visible = aimbotEnabled or silentAimEnabled end
+end)
+
+local function getAimOrigin()
+    return aimCenterScreen and Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2) or UserInputService:GetMouseLocation()
+end
+
+local function getClosestTarget()
+    local closestTarget = nil
+    local shortestDistance = fovRadius
+    local originPos = getAimOrigin()
+
+    for _, v in pairs(workspace:GetChildren()) do
+        local isPlayer = Players:GetPlayerFromCharacter(v)
+        local isNPC = targetNPCEnabled and v:FindFirstChildOfClass("Humanoid") and not isPlayer
+        
+        if (isPlayer and v ~= LocalPlayer.Character) or isNPC then
+            local hum = v:FindFirstChildOfClass("Humanoid")
+            local targetObj = v:FindFirstChild(targetPart) or v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head")
+            
+            if hum and hum.Health > 0 and targetObj then
+                local partPos, onScreen = Camera:WorldToViewportPoint(targetObj.Position)
+                if onScreen and isPartVisible(targetObj) then
+                    local dist = (Vector2.new(partPos.X, partPos.Y) - originPos).Magnitude
+                    if dist < shortestDistance then
+                        closestTarget = targetObj
+                        shortestDistance = dist
+                    end
+                end
+            end
+        end
+    end
+
+    return closestTarget
+end
+
+---------------------------------------------------------
+-- 4. หมวดหมู่: ESP มองทะลุ (Safe Highlight ESP)
+---------------------------------------------------------
+local ESPBtn = createButton(ESPTab, "ESP ผู้เล่น : OFF")
+local ESPRainbowBtn = createButton(ESPTab, "ESP สีรุ้ง : OFF")
+local ColorInput = createInput(ESPTab, "โค้ดสี R,G,B (เช่น 255,0,0)", "255,0,0")
+
+local espEnabled, espRainbow = false, false
+local espColor = Color3.fromRGB(255, 0, 0)
+
+ColorInput.FocusLost:Connect(function()
+    local r, g, b = ColorInput.Text:match("(%d+),%s*(%d+),%s*(%d+)")
+    if r and g and b then
+        espColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+    else
+        ColorInput.Text = "255,0,0"
+        espColor = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+ESPBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    ESPBtn.Text = espEnabled and "ESP ผู้เล่น : ON" or "ESP ผู้เล่น : OFF"
+    ESPBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+    
+    if not espEnabled then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr.Character and plr.Character:FindFirstChild("ESPHighlight") then
+                plr.Character.ESPHighlight:Destroy()
+            end
+        end
+    end
+end)
+
+ESPRainbowBtn.MouseButton1Click:Connect(function()
+    espRainbow = not espRainbow
+    ESPRainbowBtn.Text = espRainbow and "ESP สีรุ้ง : ON" or "ESP สีรุ้ง : OFF"
+    ESPRainbowBtn.BackgroundColor3 = espRainbow and Color3.fromRGB(40, 180, 40) or Color3.fromRGB(180, 40, 40)
+end)
+
+local function updateESP()
+    if not espEnabled then return end
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local highlight = plr.Character:FindFirstChild("ESPHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ESPHighlight"
+                highlight.Parent = plr.Character
+                highlight.FillTransparency = 0.4
+                highlight.OutlineTransparency = 0
+            end
+            
+            local activeColor = espRainbow and Color3.fromHSV((tick() * 0.5) % 1, 1, 1) or espColor
+            highlight.FillColor = activeColor
+            highlight.OutlineColor = activeColor
+        end
+    end
+end
+
+---------------------------------------------------------
+-- Main Render Loop (Safe Performance)
+---------------------------------------------------------
+local hue = 0
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        if FOVCircle then
+            FOVCircle.Position = getAimOrigin()
+            if rainbowFOV then
+                hue = (hue + 0.005) % 1
+                FOVCircle.Color = Color3.fromHSV(hue, 1, 1)
+            end
+        end
+        
+        local target = getClosestTarget()
+        if target then
+            if aimbotEnabled then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+            end
+            if silentAimEnabled then
+                -- Safe Camera Guidance (ป้องกันแอนตี้ชีตจับ)
+                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, target.Position), 0.2)
+            end
+        end
+
+        updateESP()
+    end)
+end)
